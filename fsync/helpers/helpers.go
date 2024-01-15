@@ -49,16 +49,19 @@ func ArgInit() InputArgs {
 	keyData, err := os.ReadFile(sshKey.Name())
 	if err != nil {
 		fmt.Println("Error reading private key:", err)
+		os.Exit(1)
 	}
 
 	privateKey, err := ssh.ParsePrivateKey(keyData)
 	if err != nil {
 		fmt.Println("Error parsing private key:", err)
+		os.Exit(1)
 	}
 
 	hostsData, err := knownhosts.New(hostsFile.Name())
 	if err != nil {
 		fmt.Println("Error parsing hosts file:", err)
+		os.Exit(1)
 	}
 
 	return InputArgs{*selectedAction, *configFile, privateKey, hostsData, *logFile}
@@ -70,11 +73,13 @@ func BuildHostConfig(i InputArgs) HostConfig {
 	data, err := os.ReadFile(i.ConfigFile.Name())
 	if err != nil {
 		fmt.Println("Encountered error while reading json:", err)
+		os.Exit(1)
 	}
 
 	err = json.Unmarshal(data, &hosts.HostsMap)
 	if err != nil {
 		fmt.Println("Encountered error while unmarshalling file:", err)
+		os.Exit(1)
 	}
 
 	for key, value := range hosts.HostsMap {
@@ -94,7 +99,8 @@ func BuildHostConfig(i InputArgs) HostConfig {
 
 func (hosts HostConfig) VerifyHosts() {
 	for hostPetName, hostData := range hosts.HostsMap {
-		fmt.Println("Trying to connect to:", hostPetName)
+		fmt.Printf("[%s] Starting verification\n", hostPetName)
+
 		sshConfig := &ssh.ClientConfig{
 			User: hostData.User,
 			Auth: []ssh.AuthMethod{
@@ -106,16 +112,23 @@ func (hosts HostConfig) VerifyHosts() {
 		conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", hostData.Hostname, hostData.Port), sshConfig)
 		if err != nil {
 			fmt.Println("Encountered error trying to connect over ssh:", err)
+			os.Exit(1)
 		}
 
 		client, err := sftp.NewClient(conn)
 		if err != nil {
 			fmt.Println("Encountered error while trying to create client:", err)
+			os.Exit(1)
 		}
 
 		defer client.Close()
-		pwd, _ := client.Getwd()
-
-		fmt.Println(pwd)
+		pwd, err := client.Getwd()
+		_ = pwd
+		if err != nil {
+			fmt.Println("Encountered error while reading directory:", err)
+			os.Exit(1)
+		} else {
+			fmt.Printf("[%s] Verification succesfull\n", hostPetName)
+		}
 	}
 }
