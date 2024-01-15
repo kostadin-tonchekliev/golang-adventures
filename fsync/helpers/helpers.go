@@ -23,6 +23,7 @@ type InputArgs struct {
 type HostConfig struct {
 	HostsMap map[string]struct {
 		Hostname  string `json:"hostname"`
+		Port      int    `json:"port"`
 		User      string `json:"user"`
 		LocalDir  string `json:"local_dir"`
 		RemoteDir string `json:"remote_dir"`
@@ -76,6 +77,14 @@ func BuildHostConfig(i InputArgs) HostConfig {
 		fmt.Println("Encountered error while unmarshalling file:", err)
 	}
 
+	for key, value := range hosts.HostsMap {
+		if value.Port == 0 {
+			value.Port = 22
+
+			hosts.HostsMap[key] = value
+		}
+	}
+
 	hosts.SSHKey = i.PublicKey
 	hosts.Hosts = i.Hosts
 	hosts.Logger = i.LogFile.Name()
@@ -94,7 +103,7 @@ func (hosts HostConfig) VerifyHosts() {
 			HostKeyCallback: hosts.Hosts,
 		}
 
-		conn, err := ssh.Dial("tcp", hostData.Hostname, sshConfig)
+		conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", hostData.Hostname, hostData.Port), sshConfig)
 		if err != nil {
 			fmt.Println("Encountered error trying to connect over ssh:", err)
 		}
