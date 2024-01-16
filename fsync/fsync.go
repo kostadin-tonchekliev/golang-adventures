@@ -16,6 +16,7 @@ func main() {
 		customPrint("Host config built")
 		hosts.VerifyHosts()
 		customPrint("Hosts verified")
+		hosts.StartSync()
 	case "config":
 		fmt.Println("Selected action config")
 	}

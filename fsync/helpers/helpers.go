@@ -21,16 +21,18 @@ type InputArgs struct {
 }
 
 type HostConfig struct {
-	HostsMap map[string]struct {
-		Hostname  string `json:"hostname"`
-		Port      int    `json:"port"`
-		User      string `json:"user"`
-		LocalDir  string `json:"local_dir"`
-		RemoteDir string `json:"remote_dir"`
-	}
-	SSHKey ssh.Signer
-	Hosts  ssh.HostKeyCallback
-	Logger string // Not in use yet
+	HostsMap map[string]hostObject
+	SSHKey   ssh.Signer
+	Hosts    ssh.HostKeyCallback
+	Logger   string // Not in use yet
+}
+
+type hostObject struct {
+	Hostname  string `json:"hostname"`
+	Port      int    `json:"port"`
+	User      string `json:"user"`
+	LocalDir  string `json:"local_dir"`
+	RemoteDir string `json:"remote_dir"`
 }
 
 func ArgInit() InputArgs {
@@ -44,6 +46,7 @@ func ArgInit() InputArgs {
 	err := argParser.Parse(os.Args)
 	if err != nil {
 		fmt.Print(argParser.Usage(err))
+		os.Exit(1)
 	}
 
 	keyData, err := os.ReadFile(sshKey.Name())
@@ -131,4 +134,16 @@ func (hosts HostConfig) VerifyHosts() {
 			fmt.Printf("[%s] Verification succesfull\n", hostPetName)
 		}
 	}
+}
+
+func (hosts HostConfig) StartSync() {
+	fmt.Println("Sync started")
+	for hostPetName, hostData := range hosts.HostsMap {
+		fmt.Printf("Starting sync for %s\n", hostPetName)
+		hostData.syncContent()
+	}
+}
+
+func (singleHost hostObject) syncContent() {
+	fmt.Println("Syncing content for:", singleHost.Hostname)
 }
