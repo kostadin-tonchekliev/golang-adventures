@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/akamensky/argparse"
 	"github.com/pkg/sftp"
+	"github.com/radovskyb/watcher"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
+	"log"
 	"os"
 )
 
@@ -86,6 +88,13 @@ func BuildHostConfig(i InputArgs) HostConfig {
 	}
 
 	for key, value := range hosts.HostsMap {
+		pwd, err := os.ReadDir(value.LocalDir)
+		_ = pwd
+		if err != nil {
+			fmt.Println("Error reading local directory:", err)
+			os.Exit(1)
+		}
+
 		if value.Port == 0 {
 			value.Port = 22
 
@@ -139,11 +148,34 @@ func (hosts HostConfig) VerifyHosts() {
 func (hosts HostConfig) StartSync() {
 	fmt.Println("Sync started")
 	for hostPetName, hostData := range hosts.HostsMap {
-		fmt.Printf("Starting sync for %s\n", hostPetName)
-		hostData.syncContent()
+		fmt.Printf("[%s] Starting sync\n", hostPetName)
+		go hostData.syncContent(hostPetName)
 	}
 }
 
-func (singleHost hostObject) syncContent() {
-	fmt.Println("Syncing content for:", singleHost.Hostname)
+func (singleHost hostObject) syncContent(petName string) {
+	fmt.Printf("[%s] Monitoring: %s\n", petName, singleHost.LocalDir)
+	watcherObject := watcher.New()
+
+	go func() {
+		for {
+			select {
+			case event := <-watcherObject.Event:
+				fmt.Println(event) // Print the event's info.
+			case err := <-watcherObject.Error:
+				log.Fatalln(err)
+			}
+		}
+	}()
+
+	err := watcherObject.AddRecursive(singleHost.LocalDir)
+	if err != nil {
+		fmt.Println("Encountered error while trying to add file:", err)
+		os.Exit(1)
+	}
+
+	err = watcherObject.Start(1000)
+	if err != nil {
+		fmt.Println("Encountered error while starting watcher:", err)
+	}
 }

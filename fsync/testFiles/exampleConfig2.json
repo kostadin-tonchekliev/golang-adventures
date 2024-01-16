@@ -3,13 +3,13 @@
     "hostname": "192.168.1.110",
     "port": 22,
     "user": "homeboi",
-    "local_dir": "/Users/ktonchekliev/Desktop/GitHub/fsync/testFiles/exampleDir",
+    "local_dir": "/Users/kostadintonchekliev/Desktop/git/golang-adventures/fsync/testFiles/exampleDir",
     "remote_dir": "/home/homeboi/exampleDir"
   },
   "icarus2": {
     "hostname": "192.168.1.110",
     "user": "homeboi",
-    "local_dir": "/Users/ktonchekliev/Desktop/GitHub/fsync/testFiles/exampleDir2",
+    "local_dir": "/Users/kostadintonchekliev/Desktop/git/golang-adventures/fsync/testFiles/exampleDir2",
     "remote_dir": "/home/homeboi/exampleDir2"
   }
 }
