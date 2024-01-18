@@ -8,8 +8,9 @@ import (
 	"github.com/radovskyb/watcher"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
-	"log"
 	"os"
+	"reflect"
+	"sync"
 )
 
 const logFileName = "fsync.log"
@@ -146,11 +147,15 @@ func (hosts HostConfig) VerifyHosts() {
 }
 
 func (hosts HostConfig) StartSync() {
+	var waitGroup sync.WaitGroup
+
 	fmt.Println("Sync started")
 	for hostPetName, hostData := range hosts.HostsMap {
 		fmt.Printf("[%s] Starting sync\n", hostPetName)
 		go hostData.syncContent(hostPetName)
+		waitGroup.Add(1)
 	}
+	waitGroup.Wait()
 }
 
 func (singleHost hostObject) syncContent(petName string) {
@@ -161,9 +166,11 @@ func (singleHost hostObject) syncContent(petName string) {
 		for {
 			select {
 			case event := <-watcherObject.Event:
-				fmt.Println(event) // Print the event's info.
+				fmt.Printf("Op: %s, Path: %s, Type: %s, StringValue: %s\n", event.Op, event.Path, reflect.TypeOf(event.FileInfo), event.String())
 			case err := <-watcherObject.Error:
-				log.Fatalln(err)
+				fmt.Println("Encountered error while goroutine is running:", err)
+			case <-watcherObject.Closed:
+				return
 			}
 		}
 	}()
