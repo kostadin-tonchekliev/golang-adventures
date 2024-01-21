@@ -15,7 +15,11 @@ func main() {
 				switch cliArguments[2] {
 				case "ls":
 					configObject := configHelpers.ReadConfig()
-					configObject.ReadContent()
+					configObject.ListConfig()
+					configObject.CloseConfig()
+				case "add":
+					configObject := configHelpers.ReadConfig()
+					configObject.AddConfig()
 					configObject.CloseConfig()
 				default:
 					fmt.Println("[Exit 1] Please select valid subaction")
