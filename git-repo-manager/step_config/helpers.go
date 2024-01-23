@@ -125,7 +125,6 @@ func (config Config) AddConfig() {
 		}
 	}
 
-	fmt.Printf("[Debug] New information: %s - %s - %s\n", petName, uri, path)
 	config.RepoMap[petName] = RepoObject{
 		Url:  uri,
 		Path: path,
@@ -136,9 +135,8 @@ func (config Config) AddConfig() {
 		fmt.Println("[Err] Unable to convert map to json\n", err)
 	}
 
-	fmt.Println(jsonContent)
-
 	config.ConfigFile.Truncate(0)
+	config.ConfigFile.Seek(0, 0)
 	_, err = config.ConfigFile.Write(jsonContent)
 	if err != nil {
 		fmt.Println("[Err] Unable to write new value to config\n", err)
