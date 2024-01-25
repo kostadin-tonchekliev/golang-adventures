@@ -29,6 +29,8 @@ func main() {
 				fmt.Println("[Exit 1] Please select an action")
 				os.Exit(1)
 			}
+		case "cd":
+			fmt.Println("Selected option cd")
 		default:
 			fmt.Println("[Exit 1] Please select valid action")
 			os.Exit(1)

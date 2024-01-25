@@ -3,10 +3,13 @@ package configHelpers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cqroot/prompt"
 	"os"
 )
 
 const configFileName = ".grconfig.json"
+
+var promptObject = prompt.New()
 
 type Config struct {
 	RepoMap    map[string]RepoObject
@@ -20,13 +23,16 @@ type RepoObject struct {
 
 func readInput(message string) string {
 	var inputString string
+	var err error
 
 	for {
-		fmt.Printf("[Input] %s: ", message)
-		_, err := fmt.Scanf("%s", &inputString)
+		inputString, err = promptObject.Ask(message).Input("")
 		if err != nil {
-			fmt.Println("[Err] Empty value provided!")
-		} else {
+			fmt.Println("[Err] Unable to read input\n", err)
+			os.Exit(0)
+		}
+
+		if inputString != "" {
 			break
 		}
 	}
@@ -112,6 +118,7 @@ func (config Config) ListConfig() {
 
 func (config Config) AddConfig() {
 	var petName, uri, path string
+
 	petName = readInput("Select petname for the repository")
 	uri = readInput("Select uri of the repository")
 
