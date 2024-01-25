@@ -2,27 +2,26 @@ package main
 
 import (
 	"fmt"
-	"git-repo-manager/step_config"
+	"git-repo-manager/configHelpers"
 	"os"
 )
 
 func main() {
 	cliArguments := os.Args
 	if len(cliArguments) > 1 {
+		// Read config in the beginning
+		configObject := configHelpers.ReadConfig()
+
 		switch cliArguments[1] {
 		case "config":
 			if len(cliArguments) > 2 {
 				switch cliArguments[2] {
 				case "ls":
-					configObject := configHelpers.ReadConfig()
 					configObject.ListConfig()
-					configObject.CloseConfig()
 				case "add":
-					configObject := configHelpers.ReadConfig()
 					configObject.AddConfig()
-					configObject.CloseConfig()
 				default:
-					fmt.Println("[Exit 1] Please select valid subaction")
+					fmt.Println("[Exit 1] Please select valid sub-action")
 					os.Exit(1)
 				}
 			} else {
@@ -30,11 +29,23 @@ func main() {
 				os.Exit(1)
 			}
 		case "cd":
-			fmt.Println("Selected option cd")
+			switch len(cliArguments) {
+			case 2:
+				configObject.CDRepoChoice()
+			case 3:
+				configObject.CDRepoManual(cliArguments[2])
+			default:
+				fmt.Println("[Exit 1] Please select valid sub-action")
+				os.Exit(1)
+			}
+
 		default:
 			fmt.Println("[Exit 1] Please select valid action")
 			os.Exit(1)
 		}
+
+		// Close config at the end
+		configObject.CloseConfig()
 	} else {
 		// Can print help here
 		fmt.Println("Please select an action")

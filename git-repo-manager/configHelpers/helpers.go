@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cqroot/prompt"
+	"github.com/cqroot/prompt/choose"
 	"os"
+	"os/exec"
 )
 
 const configFileName = ".grconfig.json"
@@ -148,4 +150,47 @@ func (config Config) AddConfig() {
 	if err != nil {
 		fmt.Println("[Err] Unable to write new value to config\n", err)
 	}
+}
+
+func (config Config) CDRepoChoice() {
+	var choiceOptions []choose.Choice
+
+	for petName, repoContent := range config.RepoMap {
+		repoChoice := choose.Choice{
+			Text: petName,
+			Note: repoContent.Url,
+		}
+
+		choiceOptions = append(choiceOptions, repoChoice)
+	}
+
+	repoChoice, err := promptObject.Ask("Select repository").AdvancedChoose(choiceOptions)
+	if err != nil {
+		fmt.Println("[Err] Error reading repository choice\n", err)
+		os.Exit(1)
+	}
+
+	cdCommand := exec.Command("cd", config.RepoMap[repoChoice].Path)
+	err = cdCommand.Run()
+	if err != nil {
+		fmt.Printf("[Err] Unable to change to directory %s\n%s", config.RepoMap[repoChoice].Path, err)
+		os.Exit(1)
+	}
+}
+
+func (config Config) CDRepoManual(repoChoice string) {
+	_, exist := config.RepoMap[repoChoice]
+	if exist {
+		fmt.Println("Moved to ", config.RepoMap[repoChoice].Path)
+		cdCommand := exec.Command("cd", config.RepoMap[repoChoice].Path)
+		err := cdCommand.Run()
+		if err != nil {
+			fmt.Printf("[Err] Unable to change to directory %s\n%s", config.RepoMap[repoChoice].Path, err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Printf("[Err] Repository %s not found in the config\n", repoChoice)
+		os.Exit(0)
+	}
+
 }
