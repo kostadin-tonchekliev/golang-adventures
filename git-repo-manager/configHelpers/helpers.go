@@ -9,7 +9,9 @@ import (
 	"os/exec"
 )
 
-const configFileName = ".grconfig.json"
+const configFileName = "grconfig.json"
+const tmpDirFileName = "grtmp.txt"
+const projectHomeName = ".gmanager"
 
 var promptObject = prompt.New()
 
@@ -42,6 +44,52 @@ func readInput(message string) string {
 	return inputString
 }
 
+func SetupEnv() {
+	var homeDir string
+	var err error
+	var fileObject *os.File
+
+	homeDir, err = os.UserHomeDir()
+	if err != nil {
+		fmt.Println("[Err] Unable to read home directory\n", err)
+		os.Exit(1)
+	}
+
+	homeDir = "exampleFiles" // Just for testing purposes
+
+	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, projectHomeName)); err != nil {
+		err := os.Mkdir(fmt.Sprintf("%s/%s", homeDir, projectHomeName), 0755)
+		if err != nil {
+			fmt.Printf("[Err] Unable to create project folder %s/%s \n%s", homeDir, projectHomeName, err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Printf("[Info] Project folder %s/%s already exists\n", homeDir, projectHomeName)
+	}
+
+	fmt.Printf("[Info] Project home folder initialized in %s/%s \n", homeDir, projectHomeName)
+
+	for _, value := range []string{configFileName, tmpDirFileName} {
+		if _, err = os.Stat(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, value)); err != nil {
+			fileObject, err = os.Create(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, value))
+			if err != nil {
+				fmt.Printf("[Err] Unable to create file %s/%s/%s \n%s", homeDir, projectHomeName, value, err)
+				os.Exit(0)
+			}
+
+			fmt.Printf("[Info] File %s/%s/%s succesfully created\n", homeDir, projectHomeName, value)
+
+			defer fileObject.Close()
+			err = fileObject.Chmod(0644)
+			if err != nil {
+				fmt.Printf("[Err] Unable to change permissions of file  %s/%s/%s \n%s", homeDir, projectHomeName, value, err)
+			}
+		} else {
+			fmt.Printf("[Info] File %s/%s/%s already exists\n", homeDir, projectHomeName, value)
+		}
+	}
+}
+
 func ReadConfig() Config {
 	var configFile Config
 
@@ -53,7 +101,7 @@ func ReadConfig() Config {
 
 	homeDir = "exampleFiles" // Just for testing purposes
 
-	fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, configFileName)
+	// fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, configFileName) // Enable only for logging purposes
 
 	configFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s", homeDir, configFileName), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -93,7 +141,7 @@ func ReadConfig() Config {
 }
 
 func (config Config) CloseConfig() {
-	fmt.Println("[Info] Closing config file", config.ConfigFile.Name())
+	// fmt.Println("[Info] Closing config file", config.ConfigFile.Name()) // Enable only for logging purposes
 	err := config.ConfigFile.Close()
 	if err != nil {
 		fmt.Println("[Err] Unable to close file\n", err)
@@ -102,7 +150,7 @@ func (config Config) CloseConfig() {
 }
 
 func (config Config) ListConfig() {
-	fmt.Println("[Info] Reading content of config", config.ConfigFile.Name())
+	// fmt.Println("[Info] Reading content of config", config.ConfigFile.Name()) // Enable only for logging purposes
 	i := 1
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent := range config.RepoMap {
@@ -181,16 +229,10 @@ func (config Config) CDRepoChoice() {
 func (config Config) CDRepoManual(repoChoice string) {
 	_, exist := config.RepoMap[repoChoice]
 	if exist {
-		fmt.Println("Moved to ", config.RepoMap[repoChoice].Path)
-		cdCommand := exec.Command("cd", config.RepoMap[repoChoice].Path)
-		err := cdCommand.Run()
-		if err != nil {
-			fmt.Printf("[Err] Unable to change to directory %s\n%s", config.RepoMap[repoChoice].Path, err)
-			os.Exit(1)
-		}
+		fmt.Print()
 	} else {
 		fmt.Printf("[Err] Repository %s not found in the config\n", repoChoice)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 }
