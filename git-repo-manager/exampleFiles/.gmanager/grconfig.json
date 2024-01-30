@@ -1,0 +1,22 @@
+{
+  "repo1": {
+    "url": "github.com/repo1",
+    "path": "somewhere/repo1"
+  },
+  "repo2": {
+    "url": "github.com/repo2",
+    "path": "somewhere/repo2"
+  },
+  "repo3": {
+    "url": "github.com/repo3",
+    "path": "somewhere/repo3"
+  },
+  "repo4": {
+    "url": "github.com/repo4",
+    "path": "exampleFiles"
+  },
+  "repo5": {
+    "url": "github.com/repo5",
+    "path": "exampleFiles"
+  }
+}

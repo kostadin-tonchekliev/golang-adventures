@@ -103,18 +103,17 @@ func ReadConfig() Config {
 
 	// fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, configFileName) // Enable only for logging purposes
 
-	configFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s", homeDir, configFileName), os.O_RDWR|os.O_CREATE, 0644)
+	configFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, configFileName), os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("[Err] Unable to read/create config file\n", err)
 		os.Exit(1)
 	}
 
-	// Check if the file is empty which means that it didn't exist beforehand
 	configFileStat, _ := configFileObject.Stat()
 	if configFileStat.Size() == 0 {
 		configFileObject.Write([]byte(`{}`))
 		configFileObject.Close()
-		configFileObject, err = os.OpenFile(fmt.Sprintf("%s/%s", homeDir, configFileName), os.O_RDWR, 0644)
+		configFileObject, err = os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, configFileName), os.O_RDWR, 0644)
 		if err != nil {
 			fmt.Println("[Err] Unable to read/create config file\n", err)
 			os.Exit(1)
