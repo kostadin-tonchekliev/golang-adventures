@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"git-repo-manager/configHelpers"
+	"git-repo-manager/configActions"
+	"git-repo-manager/generalHelpers"
 	"os"
 )
 
@@ -11,9 +12,10 @@ func main() {
 	if len(cliArguments) > 1 {
 		switch cliArguments[1] {
 		case "setup":
-			configHelpers.SetupEnv()
+			generalHelpers.SetupEnv()
 		case "config":
-			configObject := configHelpers.ReadConfig()
+			generalHelpers.VerifyEnv()
+			configObject := configActions.ReadConfig()
 			if len(cliArguments) > 2 {
 				switch cliArguments[2] {
 				case "ls":
@@ -30,7 +32,8 @@ func main() {
 			}
 			configObject.CloseConfig()
 		case "cd":
-			configObject := configHelpers.ReadConfig()
+			generalHelpers.VerifyEnv()
+			configObject := configActions.ReadConfig()
 			switch len(cliArguments) {
 			case 2:
 				configObject.CDRepoChoice()

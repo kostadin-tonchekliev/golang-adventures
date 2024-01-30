@@ -1,19 +1,16 @@
-package configHelpers
+package configActions
 
 import (
 	"encoding/json"
 	"fmt"
+	"git-repo-manager/generalHelpers"
+	"git-repo-manager/sharedConstants"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
 	"os"
-	"os/exec"
 )
 
-const configFileName = "grconfig.json"
-const tmpDirFileName = "grtmp.txt"
-const projectHomeName = ".gmanager"
-
-var promptObject = prompt.New()
+var promptObject = prompt.New() // Can most likely remove this if I don't end up using it again
 
 type Config struct {
 	RepoMap    map[string]RepoObject
@@ -23,71 +20,6 @@ type Config struct {
 type RepoObject struct {
 	Url  string `json:"url"`
 	Path string `json:"path"`
-}
-
-func readInput(message string) string {
-	var inputString string
-	var err error
-
-	for {
-		inputString, err = promptObject.Ask(message).Input("")
-		if err != nil {
-			fmt.Println("[Err] Unable to read input\n", err)
-			os.Exit(0)
-		}
-
-		if inputString != "" {
-			break
-		}
-	}
-
-	return inputString
-}
-
-func SetupEnv() {
-	var homeDir string
-	var err error
-	var fileObject *os.File
-
-	homeDir, err = os.UserHomeDir()
-	if err != nil {
-		fmt.Println("[Err] Unable to read home directory\n", err)
-		os.Exit(1)
-	}
-
-	homeDir = "exampleFiles" // Just for testing purposes
-
-	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, projectHomeName)); err != nil {
-		err := os.Mkdir(fmt.Sprintf("%s/%s", homeDir, projectHomeName), 0755)
-		if err != nil {
-			fmt.Printf("[Err] Unable to create project folder %s/%s \n%s", homeDir, projectHomeName, err)
-			os.Exit(1)
-		}
-	} else {
-		fmt.Printf("[Info] Project folder %s/%s already exists\n", homeDir, projectHomeName)
-	}
-
-	fmt.Printf("[Info] Project home folder initialized in %s/%s \n", homeDir, projectHomeName)
-
-	for _, value := range []string{configFileName, tmpDirFileName} {
-		if _, err = os.Stat(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, value)); err != nil {
-			fileObject, err = os.Create(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, value))
-			if err != nil {
-				fmt.Printf("[Err] Unable to create file %s/%s/%s \n%s", homeDir, projectHomeName, value, err)
-				os.Exit(0)
-			}
-
-			fmt.Printf("[Info] File %s/%s/%s succesfully created\n", homeDir, projectHomeName, value)
-
-			defer fileObject.Close()
-			err = fileObject.Chmod(0644)
-			if err != nil {
-				fmt.Printf("[Err] Unable to change permissions of file  %s/%s/%s \n%s", homeDir, projectHomeName, value, err)
-			}
-		} else {
-			fmt.Printf("[Info] File %s/%s/%s already exists\n", homeDir, projectHomeName, value)
-		}
-	}
 }
 
 func ReadConfig() Config {
@@ -103,7 +35,7 @@ func ReadConfig() Config {
 
 	// fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, configFileName) // Enable only for logging purposes
 
-	configFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, configFileName), os.O_RDWR, 0644)
+	configFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, sharedConstants.ConfigFileName), os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("[Err] Unable to read/create config file\n", err)
 		os.Exit(1)
@@ -113,7 +45,7 @@ func ReadConfig() Config {
 	if configFileStat.Size() == 0 {
 		configFileObject.Write([]byte(`{}`))
 		configFileObject.Close()
-		configFileObject, err = os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, projectHomeName, configFileName), os.O_RDWR, 0644)
+		configFileObject, err = os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, sharedConstants.ConfigFileName), os.O_RDWR, 0644)
 		if err != nil {
 			fmt.Println("[Err] Unable to read/create config file\n", err)
 			os.Exit(1)
@@ -168,11 +100,11 @@ func (config Config) ListConfig() {
 func (config Config) AddConfig() {
 	var petName, uri, path string
 
-	petName = readInput("Select petname for the repository")
-	uri = readInput("Select uri of the repository")
+	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject)
+	uri = generalHelpers.ReadInput("Select uri of the repository", promptObject)
 
 	for {
-		path = readInput("Select local path of the repository")
+		path = generalHelpers.ReadInput("Select local path of the repository", promptObject)
 		files, err := os.ReadDir(path)
 		if err != nil || len(files) == 0 {
 			fmt.Println("[Err] Please select valid directory")
@@ -217,18 +149,13 @@ func (config Config) CDRepoChoice() {
 		os.Exit(1)
 	}
 
-	cdCommand := exec.Command("cd", config.RepoMap[repoChoice].Path)
-	err = cdCommand.Run()
-	if err != nil {
-		fmt.Printf("[Err] Unable to change to directory %s\n%s", config.RepoMap[repoChoice].Path, err)
-		os.Exit(1)
-	}
+	fmt.Print(config.RepoMap[repoChoice].Path)
 }
 
 func (config Config) CDRepoManual(repoChoice string) {
 	_, exist := config.RepoMap[repoChoice]
 	if exist {
-		fmt.Print()
+		fmt.Print(config.RepoMap[repoChoice].Path)
 	} else {
 		fmt.Printf("[Err] Repository %s not found in the config\n", repoChoice)
 		os.Exit(1)
