@@ -12,7 +12,7 @@ func main() {
 	if len(cliArguments) > 1 {
 		switch cliArguments[1] {
 		case "setup":
-			generalHelpers.SetupEnv()
+			configActions.SetupEnv()
 		case "config":
 			generalHelpers.VerifyEnv()
 			configObject := configActions.ReadConfig()
@@ -30,7 +30,7 @@ func main() {
 				fmt.Println("[Exit 1] Please select an action")
 				os.Exit(1)
 			}
-			configObject.CloseConfig()
+			configObject.CloseFiles()
 		case "cd":
 			generalHelpers.VerifyEnv()
 			configObject := configActions.ReadConfig()
@@ -43,8 +43,7 @@ func main() {
 				fmt.Println("[Exit 1] Please select valid sub-action")
 				os.Exit(1)
 			}
-			configObject.CloseConfig()
-
+			configObject.CloseFiles()
 		default:
 			fmt.Println("[Exit 1] Please select valid action")
 			os.Exit(1)

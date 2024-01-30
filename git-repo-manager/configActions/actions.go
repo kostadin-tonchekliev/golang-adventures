@@ -15,11 +15,75 @@ var promptObject = prompt.New() // Can most likely remove this if I don't end up
 type Config struct {
 	RepoMap    map[string]RepoObject
 	ConfigFile *os.File
+	TmpDirFile *os.File
 }
 
 type RepoObject struct {
 	Url  string `json:"url"`
 	Path string `json:"path"`
+}
+
+func SetupEnv() {
+	var homeDir, fileName, execLocation, shellType string
+	var err error
+	var fileObject *os.File
+
+	homeDir, err = os.UserHomeDir()
+	if err != nil {
+		fmt.Println("[Err] Unable to read home directory\n", err)
+		os.Exit(1)
+	}
+
+	homeDir = "exampleFiles" // Just for testing purposes
+
+	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName)); err != nil {
+		err := os.Mkdir(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName), 0755)
+		if err != nil {
+			fmt.Printf("[Err] Unable to create project folder %s/%s \n%s\n", homeDir, sharedConstants.ProjectHomeName, err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Printf("[Info] Project folder %s/%s already exists\n", homeDir, sharedConstants.ProjectHomeName)
+	}
+
+	fmt.Printf("[Info] Project home folder initialized in %s/%s \n", homeDir, sharedConstants.ProjectHomeName)
+
+	for _, fileName = range []string{sharedConstants.ConfigFileName, sharedConstants.TmpDirFileName} {
+		if _, err = os.Stat(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, fileName)); err != nil {
+			fileObject, err = os.Create(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, fileName))
+			if err != nil {
+				fmt.Printf("[Err] Unable to create file %s/%s/%s \n%s\n", homeDir, sharedConstants.ProjectHomeName, fileName, err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("[Info] File %s/%s/%s succesfully created\n", homeDir, sharedConstants.ProjectHomeName, fileName)
+
+			defer fileObject.Close()
+			err = fileObject.Chmod(0644)
+			if err != nil {
+				fmt.Printf("[Err] Unable to change permissions of file  %s/%s/%s \n%s\n", homeDir, sharedConstants.ProjectHomeName, fileName, err)
+			}
+		} else {
+			fmt.Printf("[Info] File %s/%s/%s already exists\n", homeDir, sharedConstants.ProjectHomeName, fileName)
+		}
+	}
+
+	execLocation = generalHelpers.ReadInput("Select path of executable:", promptObject, true)
+	shellType = os.Getenv("SHELL")
+
+	switch shellType {
+	case "/bin/zsh":
+		fileObject, err = os.OpenFile(fmt.Sprintf("%s/.zshrc", homeDir), os.O_WRONLY|os.O_APPEND, 0644)
+	}
+
+	if err != nil {
+		fmt.Println("[Err] Unable to open file\n", err)
+		os.Exit(1)
+	}
+	_, err = fileObject.WriteString(fmt.Sprintf("\nalias %s='go run %s cd $1; if [[ $(echo $?) == 0 ]]; then cd $(cat %s/%s/%s); fi'\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
+	if err != nil {
+		fmt.Println("[Err] Unable to write to file\n", err)
+	}
 }
 
 func ReadConfig() Config {
@@ -33,11 +97,17 @@ func ReadConfig() Config {
 
 	homeDir = "exampleFiles" // Just for testing purposes
 
-	// fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, configFileName) // Enable only for logging purposes
-
+	fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, sharedConstants.ConfigFileName)
 	configFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, sharedConstants.ConfigFileName), os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("[Err] Unable to read/create config file\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("[Info] Reading temporary directory file located in %s/%s\n", homeDir, sharedConstants.TmpDirFileName)
+	tmpDirFileObject, err := os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName), os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		fmt.Println("[Err] Unable to read/create temporary directory file\n", err)
 		os.Exit(1)
 	}
 
@@ -67,21 +137,32 @@ func ReadConfig() Config {
 	}
 
 	configFile.ConfigFile = configFileObject
+	configFile.TmpDirFile = tmpDirFileObject
 
 	return configFile
 }
 
-func (config Config) CloseConfig() {
-	// fmt.Println("[Info] Closing config file", config.ConfigFile.Name()) // Enable only for logging purposes
-	err := config.ConfigFile.Close()
+func (config Config) CloseFiles() {
+	var err error
+
+	fmt.Println("[Info] Closing config file", config.ConfigFile.Name())
+	err = config.ConfigFile.Close()
 	if err != nil {
-		fmt.Println("[Err] Unable to close file\n", err)
+		fmt.Println("[Err] Unable to close config file\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("[Info] Closing temporary directory file", config.TmpDirFile.Name())
+	err = config.TmpDirFile.Close()
+	if err != nil {
+		fmt.Println("[Err] Unable to close temporary directory file\n", err)
 		os.Exit(1)
 	}
 }
 
 func (config Config) ListConfig() {
-	// fmt.Println("[Info] Reading content of config", config.ConfigFile.Name()) // Enable only for logging purposes
+	fmt.Println("[Info] Reading content of config", config.ConfigFile.Name())
+
 	i := 1
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent := range config.RepoMap {
@@ -100,18 +181,9 @@ func (config Config) ListConfig() {
 func (config Config) AddConfig() {
 	var petName, uri, path string
 
-	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject)
-	uri = generalHelpers.ReadInput("Select uri of the repository", promptObject)
-
-	for {
-		path = generalHelpers.ReadInput("Select local path of the repository", promptObject)
-		files, err := os.ReadDir(path)
-		if err != nil || len(files) == 0 {
-			fmt.Println("[Err] Please select valid directory")
-		} else {
-			break
-		}
-	}
+	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject, false)
+	uri = generalHelpers.ReadInput("Select uri of the repository", promptObject, false)
+	path = generalHelpers.ReadInput("Select local path of the repository", promptObject, true)
 
 	config.RepoMap[petName] = RepoObject{
 		Url:  uri,
@@ -133,8 +205,11 @@ func (config Config) AddConfig() {
 
 func (config Config) CDRepoChoice() {
 	var choiceOptions []choose.Choice
+	var petName, repoChoice string
+	var repoContent RepoObject
+	var err error
 
-	for petName, repoContent := range config.RepoMap {
+	for petName, repoContent = range config.RepoMap {
 		repoChoice := choose.Choice{
 			Text: petName,
 			Note: repoContent.Url,
@@ -143,19 +218,28 @@ func (config Config) CDRepoChoice() {
 		choiceOptions = append(choiceOptions, repoChoice)
 	}
 
-	repoChoice, err := promptObject.Ask("Select repository").AdvancedChoose(choiceOptions)
+	repoChoice, err = promptObject.Ask("Select repository").AdvancedChoose(choiceOptions)
 	if err != nil {
 		fmt.Println("[Err] Error reading repository choice\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Print(config.RepoMap[repoChoice].Path)
+	_, err = config.TmpDirFile.WriteString(config.RepoMap[repoChoice].Path)
+	if err != nil {
+		fmt.Println("[Err] Unable to write to temporary directory file\n", err)
+	}
 }
 
 func (config Config) CDRepoManual(repoChoice string) {
-	_, exist := config.RepoMap[repoChoice]
+	var exist bool
+	var err error
+
+	_, exist = config.RepoMap[repoChoice]
 	if exist {
-		fmt.Print(config.RepoMap[repoChoice].Path)
+		_, err = config.TmpDirFile.WriteString(config.RepoMap[repoChoice].Path)
+		if err != nil {
+			fmt.Println("[Err] Unable to write to temporary directory file\n", err)
+		}
 	} else {
 		fmt.Printf("[Err] Repository %s not found in the config\n", repoChoice)
 		os.Exit(1)
