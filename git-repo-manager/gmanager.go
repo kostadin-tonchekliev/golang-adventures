@@ -22,6 +22,8 @@ func main() {
 					configObject.ListConfig()
 				case "add":
 					configObject.AddConfig()
+				case "remove":
+					configObject.RemoveConfig()
 				default:
 					fmt.Println("[Exit 1] Please select valid sub-action")
 					os.Exit(1)

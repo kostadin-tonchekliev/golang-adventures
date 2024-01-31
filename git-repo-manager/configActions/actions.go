@@ -212,45 +212,71 @@ func (config Config) AddConfig() {
 	}
 }
 
-func (config Config) CDRepoChoice() {
+func (config Config) RemoveConfig() {
 	var choiceOptions []choose.Choice
-	var petName, repoChoice string
 	var repoContent RepoObject
+	var repoObject choose.Choice
+	var petName, repoSelection string
 	var err error
 
 	for petName, repoContent = range config.RepoMap {
-		repoChoice := choose.Choice{
+		repoObject = choose.Choice{
 			Text: petName,
 			Note: repoContent.Url,
 		}
 
-		choiceOptions = append(choiceOptions, repoChoice)
+		choiceOptions = append(choiceOptions, repoObject)
 	}
 
-	repoChoice, err = promptObject.Ask("Select repository").AdvancedChoose(choiceOptions)
+	repoSelection, err = promptObject.Ask("Select repository to remove").AdvancedChoose(choiceOptions)
 	if err != nil {
 		fmt.Println("[Err] Error reading repository choice\n", err)
 		os.Exit(1)
 	}
 
-	_, err = config.TmpDirFile.WriteString(config.RepoMap[repoChoice].Path)
+	fmt.Println(repoSelection)
+}
+
+func (config Config) CDRepoChoice() {
+	var choiceOptions []choose.Choice
+	var repoObject choose.Choice
+	var petName, repoSelection string
+	var repoContent RepoObject
+	var err error
+
+	for petName, repoContent = range config.RepoMap {
+		repoObject = choose.Choice{
+			Text: petName,
+			Note: repoContent.Url,
+		}
+
+		choiceOptions = append(choiceOptions, repoObject)
+	}
+
+	repoSelection, err = promptObject.Ask("Select repository").AdvancedChoose(choiceOptions)
+	if err != nil {
+		fmt.Println("[Err] Error reading repository choice\n", err)
+		os.Exit(1)
+	}
+
+	_, err = config.TmpDirFile.WriteString(config.RepoMap[repoSelection].Path)
 	if err != nil {
 		fmt.Println("[Err] Unable to write to temporary directory file\n", err)
 	}
 }
 
-func (config Config) CDRepoManual(repoChoice string) {
+func (config Config) CDRepoManual(repoSelection string) {
 	var exist bool
 	var err error
 
-	_, exist = config.RepoMap[repoChoice]
+	_, exist = config.RepoMap[repoSelection]
 	if exist {
-		_, err = config.TmpDirFile.WriteString(config.RepoMap[repoChoice].Path)
+		_, err = config.TmpDirFile.WriteString(config.RepoMap[repoSelection].Path)
 		if err != nil {
 			fmt.Println("[Err] Unable to write to temporary directory file\n", err)
 		}
 	} else {
-		fmt.Printf("[Err] Repository %s not found in the config\n", repoChoice)
+		fmt.Printf("[Err] Repository %s not found in the config\n", repoSelection)
 		os.Exit(1)
 	}
 
