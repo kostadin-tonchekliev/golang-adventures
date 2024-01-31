@@ -24,7 +24,7 @@ type RepoObject struct {
 }
 
 func SetupEnv() {
-	var homeDir, fileName, execLocation, shellType string
+	var homeDir, fileName, execLocation, shellType, shellFileLocation string
 	var err error
 	var fileObject *os.File
 
@@ -73,17 +73,26 @@ func SetupEnv() {
 
 	switch shellType {
 	case "/bin/zsh":
-		fileObject, err = os.OpenFile(fmt.Sprintf("%s/.zshrc", homeDir), os.O_WRONLY|os.O_APPEND, 0644)
+		shellFileLocation = fmt.Sprintf("%s/.zshrc", homeDir)
+	case "/bin/bash":
+		shellFileLocation = fmt.Sprintf("%s/.bashrc", homeDir)
+	default:
+		fmt.Println("[Err] Unknown shell type:", shellType)
+		os.Exit(1)
 	}
 
+	fileObject, err = os.OpenFile(shellFileLocation, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Println("[Err] Unable to open file\n", err)
 		os.Exit(1)
 	}
-	_, err = fileObject.WriteString(fmt.Sprintf("\nalias %s='go run %s cd $1; if [[ $(echo $?) == 0 ]]; then cd $(cat %s/%s/%s); fi'\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
+	// _, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() {%s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi}\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
+	_, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() {go run %s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi}\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName)) // Just for testing purposes
 	if err != nil {
 		fmt.Println("[Err] Unable to write to file\n", err)
 	}
+
+	fmt.Printf("[Info] Please run `source %s` or reload your terminal\n", shellFileLocation)
 }
 
 func ReadConfig() Config {
