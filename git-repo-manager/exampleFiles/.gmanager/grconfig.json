@@ -1,22 +1,27 @@
 {
   "repo1": {
     "url": "github.com/repo1",
-    "path": "somewhere/repo1"
+    "path": "somewhere/repo1",
+    "description": "This is the first repo"
   },
   "repo2": {
     "url": "github.com/repo2",
-    "path": "somewhere/repo2"
+    "path": "somewhere/repo2",
+    "description": "This is the second repo"
   },
   "repo3": {
     "url": "github.com/repo3",
-    "path": "somewhere/repo3"
+    "path": "somewhere/repo3",
+    "description": "This is the third repo"
   },
   "repo4": {
     "url": "github.com/repo4",
-    "path": "exampleFiles"
+    "path": "exampleFiles",
+    "description": "This is the fourth repo"
   },
   "repo5": {
     "url": "github.com/repo5",
-    "path": "exampleFiles"
+    "path": "exampleFiles",
+    "description": "This is the fifth repo"
   }
 }

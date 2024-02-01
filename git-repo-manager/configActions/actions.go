@@ -20,8 +20,9 @@ type Config struct {
 }
 
 type RepoObject struct {
-	Url  string `json:"url"`
-	Path string `json:"path"`
+	Url         string `json:"url"`
+	Path        string `json:"path"`
+	Description string `json:"description"`
 }
 
 func SetupEnv() {
@@ -193,6 +194,7 @@ func (config Config) ListConfig() {
 			fmt.Printf("[%d] %s\n", counter, petName)
 			fmt.Println("\tURL:", repoContent.Url)
 			fmt.Println("\tPath:", repoContent.Path)
+			fmt.Println("\tDescription:", repoContent.Description)
 			fmt.Println()
 			counter += 1
 		}
@@ -204,18 +206,20 @@ func (config Config) ListConfig() {
 
 func (config Config) AddConfig() {
 	var (
-		petName, uri, path string
-		jsonContent        []byte
-		err                error
+		petName, uri, path, description string
+		jsonContent                     []byte
+		err                             error
 	)
 
 	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject, false)
+	description = generalHelpers.ReadInput("Select description for the repository", promptObject, false)
 	uri = generalHelpers.ReadInput("Select uri of the repository", promptObject, false)
 	path = generalHelpers.ReadInput("Select local path of the repository", promptObject, true)
 
 	config.RepoMap[petName] = RepoObject{
-		Url:  uri,
-		Path: path,
+		Url:         uri,
+		Path:        path,
+		Description: description,
 	}
 
 	jsonContent, err = json.MarshalIndent(config.RepoMap, "", "  ")
