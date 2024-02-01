@@ -7,6 +7,7 @@ import (
 	"git-repo-manager/sharedConstants"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
+	"github.com/cqroot/prompt/multichoose"
 	"os"
 )
 
@@ -213,28 +214,32 @@ func (config Config) AddConfig() {
 }
 
 func (config Config) RemoveConfig() {
-	var choiceOptions []choose.Choice
-	var repoContent RepoObject
-	var repoObject choose.Choice
-	var petName, repoSelection string
+	var choiceOptions, repoSelection []string
+	var petName, repository string
+	var jsonContent []byte
 	var err error
 
-	for petName, repoContent = range config.RepoMap {
-		repoObject = choose.Choice{
-			Text: petName,
-			Note: repoContent.Url,
-		}
-
-		choiceOptions = append(choiceOptions, repoObject)
+	for petName, _ = range config.RepoMap {
+		choiceOptions = append(choiceOptions, petName)
 	}
 
-	repoSelection, err = promptObject.Ask("Select repository to remove").AdvancedChoose(choiceOptions)
+	repoSelection, err = promptObject.Ask("Select repositories to remove").MultiChoose(choiceOptions, multichoose.WithHelp(true))
 	if err != nil {
 		fmt.Println("[Err] Error reading repository choice\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println(repoSelection)
+	for _, repository = range repoSelection {
+		delete(config.RepoMap, repository)
+	}
+
+	jsonContent, err = json.MarshalIndent(config.RepoMap, "", "  ")
+	config.ConfigFile.Truncate(0)
+	config.ConfigFile.Seek(0, 0)
+	_, err = config.ConfigFile.Write(jsonContent)
+	if err != nil {
+		fmt.Println("[Err] Unable to write new value to config\n", err)
+	}
 }
 
 func (config Config) CDRepoChoice() {
