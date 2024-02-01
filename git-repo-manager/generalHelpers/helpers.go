@@ -8,8 +8,10 @@ import (
 )
 
 func ReadInput(message string, prompt *prompt.Prompt, isFile bool) string {
-	var inputString string
-	var err error
+	var (
+		inputString string
+		err         error
+	)
 
 	for {
 		inputString, err = prompt.Ask(message).Input("")
@@ -35,8 +37,10 @@ func ReadInput(message string, prompt *prompt.Prompt, isFile bool) string {
 }
 
 func VerifyEnv() {
-	var homeDir string
-	var err error
+	var (
+		homeDir string
+		err     error
+	)
 
 	homeDir, err = os.UserHomeDir()
 	if err != nil {
