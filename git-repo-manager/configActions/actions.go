@@ -8,10 +8,18 @@ import (
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
 	"github.com/cqroot/prompt/multichoose"
+	"github.com/fatih/color"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"os"
 )
 
+// Objects used through the script
 var promptObject = prompt.New() // Can most likely remove this if I don't end up using it again
+var yellow = color.New(color.FgYellow).SprintFunc()
+var blue = color.New(color.FgBlue).SprintFunc()
+var green = color.New(color.FgGreen).SprintFunc()
+var red = color.New(color.FgRed).SprintFunc()
 
 type Config struct {
 	RepoMap    map[string]RepoObject
@@ -20,7 +28,7 @@ type Config struct {
 }
 
 type RepoObject struct {
-	Url         string `json:"url"`
+	Url         string `json:"url"` // Can most likely remove this in the future
 	Path        string `json:"path"`
 	Description string `json:"description"`
 }
@@ -185,18 +193,27 @@ func (config Config) CloseFiles() {
 func (config Config) ListConfig() {
 	var (
 		repoContent RepoObject
+		repoObject  *git.Repository
+		branchName  *plumbing.Reference
 		petName     string
-		counter     int = 1
+		err         error
 	)
 
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent = range config.RepoMap {
-			fmt.Printf("[%d] %s\n", counter, petName)
-			fmt.Println("\tURL:", repoContent.Url)
-			fmt.Println("\tPath:", repoContent.Path)
-			fmt.Println("\tDescription:", repoContent.Description)
-			fmt.Println()
-			counter += 1
+			repoObject, err = git.PlainOpen(repoContent.Path)
+			if err != nil {
+				fmt.Println("[Err] Unable to open repository\n", err)
+				os.Exit(1)
+			}
+
+			branchName, err = repoObject.Head()
+			if err != nil {
+				fmt.Println("[Err] Unable to read branch\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("[%s] in %s: %s\n", green(petName), yellow(branchName), repoContent.Description)
 		}
 	} else {
 		fmt.Println("[Warn] Config file empty")
