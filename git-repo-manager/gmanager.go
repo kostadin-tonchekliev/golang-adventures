@@ -13,6 +13,10 @@ func main() {
 		switch cliArguments[1] {
 		case "setup":
 			configActions.SetupEnv()
+		case "status":
+			generalHelpers.VerifyEnv()
+			configObject := configActions.ReadConfig()
+			configObject.RepoStatus()
 		case "config":
 			generalHelpers.VerifyEnv()
 			configObject := configActions.ReadConfig()

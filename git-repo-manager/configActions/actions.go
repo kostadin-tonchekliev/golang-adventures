@@ -18,7 +18,6 @@ import (
 var promptObject = prompt.New() // Can most likely remove this if I don't end up using it again
 var yellow = color.New(color.FgYellow).SprintFunc()
 var blue = color.New(color.FgBlue).SprintFunc()
-var green = color.New(color.FgGreen).SprintFunc()
 var red = color.New(color.FgRed).SprintFunc()
 
 type Config struct {
@@ -190,17 +189,22 @@ func (config Config) CloseFiles() {
 	}
 }
 
-func (config Config) ListConfig() {
+func (config Config) RepoStatus() {
 	var (
-		repoContent RepoObject
-		repoObject  *git.Repository
-		branchName  *plumbing.Reference
-		petName     string
-		err         error
+		repoContent  RepoObject
+		repoObject   *git.Repository
+		repoWorktree *git.Worktree
+		repoStatus   git.Status
+		fileStatus   *git.FileStatus
+		branchName   *plumbing.Reference
+		petName      string
+		err          error
 	)
 
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent = range config.RepoMap {
+			var untrackedCount, modifiedCount, addedCount, deletedCount, renamedCount, copiedCount int
+
 			repoObject, err = git.PlainOpen(repoContent.Path)
 			if err != nil {
 				fmt.Println("[Err] Unable to open repository\n", err)
@@ -213,7 +217,56 @@ func (config Config) ListConfig() {
 				os.Exit(1)
 			}
 
-			fmt.Printf("[%s] in %s: %s\n", green(petName), yellow(branchName), repoContent.Description)
+			repoWorktree, err = repoObject.Worktree()
+			if err != nil {
+				fmt.Println("[Err] Unable to read worktree\n", err)
+			}
+
+			repoStatus, err = repoWorktree.Status()
+			if err != nil {
+				fmt.Println("[Err] Unable to read repo status\n", err)
+			}
+
+			for _, fileStatus = range repoStatus {
+				switch string(fileStatus.Staging) {
+				case "?":
+					untrackedCount++
+				case "M":
+					modifiedCount++
+				case "A":
+					addedCount++
+				case "D":
+					deletedCount++
+				case "R":
+					renamedCount++
+				case "C":
+					copiedCount++
+				}
+			}
+
+			fmt.Printf("[%s] in %s:\n", blue(petName), yellow(branchName.Name()))
+			fmt.Printf("\tUntracked: %d\n", untrackedCount)
+			fmt.Printf("\tModified: %d\n", modifiedCount)
+			fmt.Printf("\tAdded: %d\n", addedCount)
+			fmt.Printf("\tDeleted: %d\n", deletedCount)
+			fmt.Printf("\tRenamed: %d\n", renamedCount)
+			fmt.Printf("\tCopied: %d\n", copiedCount)
+		}
+	} else {
+		fmt.Println("[Warn] Config file empty")
+		os.Exit(0)
+	}
+}
+
+func (config Config) ListConfig() {
+	var (
+		repoContent RepoObject
+		petName     string
+	)
+
+	if len(config.RepoMap) != 0 {
+		for petName, repoContent = range config.RepoMap {
+			fmt.Printf("[%s] in %s: %s. Location: %s\n", blue(petName), yellow(repoContent.Path), repoContent.Description, repoContent.Url)
 		}
 	} else {
 		fmt.Println("[Warn] Config file empty")
