@@ -15,10 +15,11 @@ import (
 )
 
 // Objects used through the script
-var promptObject = prompt.New() // Can most likely remove this if I don't end up using it again
+var promptObject = prompt.New()
 var yellow = color.New(color.FgYellow).SprintFunc()
 var blue = color.New(color.FgBlue).SprintFunc()
-var red = color.New(color.FgRed).SprintFunc()
+var cyan = color.New(color.FgCyan).SprintFunc()
+var green = color.New(color.FgGreen).SprintFunc()
 
 type Config struct {
 	RepoMap    map[string]RepoObject
@@ -27,7 +28,7 @@ type Config struct {
 }
 
 type RepoObject struct {
-	Url         string `json:"url"` // Can most likely remove this in the future
+	Url         string `json:"url"`
 	Path        string `json:"path"`
 	Description string `json:"description"`
 }
@@ -44,8 +45,6 @@ func SetupEnv() {
 		fmt.Println("[Err] Unable to read home directory\n", err)
 		os.Exit(1)
 	}
-
-	homeDir = "exampleFiles" // Just for testing purposes
 
 	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName)); err != nil {
 		err = os.Mkdir(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName), 0755)
@@ -97,8 +96,8 @@ func SetupEnv() {
 		fmt.Println("[Err] Unable to open file\n", err)
 		os.Exit(1)
 	}
-	// _, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() {%s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi}\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
-	_, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() {go run %s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi}\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName)) // Just for testing purposes
+
+	_, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() {%s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi}\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
 	if err != nil {
 		fmt.Println("[Err] Unable to write to file\n", err)
 	}
@@ -122,16 +121,12 @@ func ReadConfig() Config {
 		os.Exit(1)
 	}
 
-	homeDir = "exampleFiles" // Just for testing purposes
-
-	fmt.Printf("[Info] Reading config file located in %s/%s\n", homeDir, sharedConstants.ConfigFileName)
 	configFileObject, err = os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, sharedConstants.ConfigFileName), os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("[Err] Unable to read/create config file\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("[Info] Reading temporary directory file located in %s/%s\n", homeDir, sharedConstants.TmpDirFileName)
 	tmpDirFileObject, err = os.OpenFile(fmt.Sprintf("%s/%s/%s", homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName), os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
 		fmt.Println("[Err] Unable to read/create temporary directory file\n", err)
@@ -174,14 +169,12 @@ func (config Config) CloseFiles() {
 		err error
 	)
 
-	fmt.Println("[Info] Closing config file", config.ConfigFile.Name())
 	err = config.ConfigFile.Close()
 	if err != nil {
 		fmt.Println("[Err] Unable to close config file\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("[Info] Closing temporary directory file", config.TmpDirFile.Name())
 	err = config.TmpDirFile.Close()
 	if err != nil {
 		fmt.Println("[Err] Unable to close temporary directory file\n", err)
@@ -203,7 +196,7 @@ func (config Config) RepoStatus() {
 
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent = range config.RepoMap {
-			var untrackedCount, modifiedCount, addedCount, deletedCount, renamedCount, copiedCount int
+			fileMap := make(map[string]int)
 
 			repoObject, err = git.PlainOpen(repoContent.Path)
 			if err != nil {
@@ -230,27 +223,30 @@ func (config Config) RepoStatus() {
 			for _, fileStatus = range repoStatus {
 				switch string(fileStatus.Staging) {
 				case "?":
-					untrackedCount++
+					fileMap["Untracked"]++
 				case "M":
-					modifiedCount++
+					fileMap["Modified"]++
 				case "A":
-					addedCount++
+					fileMap["Added"]++
 				case "D":
-					deletedCount++
+					fileMap["Deleted"]++
 				case "R":
-					renamedCount++
+					fileMap["Renamed"]++
 				case "C":
-					copiedCount++
+					fileMap["Copied"]++
 				}
 			}
 
-			fmt.Printf("[%s] in %s:\n", blue(petName), yellow(branchName.Name()))
-			fmt.Printf("\tUntracked: %d\n", untrackedCount)
-			fmt.Printf("\tModified: %d\n", modifiedCount)
-			fmt.Printf("\tAdded: %d\n", addedCount)
-			fmt.Printf("\tDeleted: %d\n", deletedCount)
-			fmt.Printf("\tRenamed: %d\n", renamedCount)
-			fmt.Printf("\tCopied: %d\n", copiedCount)
+			fmt.Printf("[%s] in ", blue(petName))
+			if branchName.Name() == "refs/heads/main" {
+				fmt.Printf("%s:\n", yellow(branchName.Name()))
+			} else {
+				fmt.Printf("%s:\n", green(branchName.Name()))
+			}
+
+			for fileType, fileCount := range fileMap {
+				fmt.Printf("\t%s: %d\n", fileType, fileCount)
+			}
 		}
 	} else {
 		fmt.Println("[Warn] Config file empty")
@@ -266,7 +262,7 @@ func (config Config) ListConfig() {
 
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent = range config.RepoMap {
-			fmt.Printf("[%s] in %s: %s. Location: %s\n", blue(petName), yellow(repoContent.Path), repoContent.Description, repoContent.Url)
+			fmt.Printf("[%s] in %s: %s - %s\n", blue(petName), yellow(repoContent.Path), repoContent.Description, cyan(repoContent.Url))
 		}
 	} else {
 		fmt.Println("[Warn] Config file empty")
@@ -313,7 +309,7 @@ func (config Config) RemoveConfig() {
 		err                          error
 	)
 
-	for petName, _ = range config.RepoMap {
+	for petName = range config.RepoMap {
 		choiceOptions = append(choiceOptions, petName)
 	}
 

@@ -48,8 +48,6 @@ func VerifyEnv() {
 		os.Exit(1)
 	}
 
-	homeDir = "exampleFiles" // Just for testing purposes
-
 	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName)); err != nil {
 		fmt.Printf("[Err] Project folder %s/%s cannot be found or isn't accessible. Has `setup` been ran?\n%s\n", homeDir, sharedConstants.ProjectHomeName, err)
 		os.Exit(1)
