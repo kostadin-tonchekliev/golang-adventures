@@ -33,6 +33,7 @@ type RepoObject struct {
 	Description string `json:"description"`
 }
 
+// SetupEnv - Build and verify project environment
 func SetupEnv() {
 	var (
 		homeDir, fileName, execLocation, shellType, shellFileLocation string
@@ -105,6 +106,7 @@ func SetupEnv() {
 	fmt.Printf("[Info] Please run `source %s` or reload your terminal\n", shellFileLocation)
 }
 
+// ReadConfig - Read the config file and build it into the Config struct
 func ReadConfig() Config {
 	var (
 		configFileObject, tmpDirFileObject *os.File
@@ -164,6 +166,7 @@ func ReadConfig() Config {
 	return configFile
 }
 
+// CloseFiles - Close all files opened by other methods
 func (config Config) CloseFiles() {
 	var (
 		err error
@@ -182,6 +185,7 @@ func (config Config) CloseFiles() {
 	}
 }
 
+// RepoStatus - Print the status of the repositories based on the local changes
 func (config Config) RepoStatus() {
 	var (
 		repoContent  RepoObject
@@ -254,6 +258,7 @@ func (config Config) RepoStatus() {
 	}
 }
 
+// ListConfig - Display the content of the config file
 func (config Config) ListConfig() {
 	var (
 		repoContent RepoObject
@@ -270,6 +275,7 @@ func (config Config) ListConfig() {
 	}
 }
 
+// AddConfig - Add additional entries to the config file
 func (config Config) AddConfig() {
 	var (
 		petName, uri, path, description string
@@ -301,6 +307,7 @@ func (config Config) AddConfig() {
 	}
 }
 
+// RemoveConfig - Remove entries from the config file
 func (config Config) RemoveConfig() {
 	var (
 		choiceOptions, repoSelection []string
@@ -332,6 +339,7 @@ func (config Config) RemoveConfig() {
 	}
 }
 
+// CDRepoChoice - Move to a repository which is selected from a list
 func (config Config) CDRepoChoice() {
 	var (
 		choiceOptions          []choose.Choice
@@ -362,6 +370,7 @@ func (config Config) CDRepoChoice() {
 	}
 }
 
+// CDRepoManual -  Move to repository which has been manually selected
 func (config Config) CDRepoManual(repoSelection string) {
 	var (
 		exist bool

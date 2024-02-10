@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"git-repo-manager/configActions"
 	"git-repo-manager/generalHelpers"
 	"os"
@@ -29,11 +28,11 @@ func main() {
 				case "remove":
 					configObject.RemoveConfig()
 				default:
-					fmt.Println("[Exit 1] Please select valid sub-action")
+					generalHelpers.ShowHelp(2, "config")
 					os.Exit(1)
 				}
 			} else {
-				fmt.Println("[Exit 1] Please select an action")
+				generalHelpers.ShowHelp(2, "config")
 				os.Exit(1)
 			}
 			configObject.CloseFiles()
@@ -46,18 +45,17 @@ func main() {
 			case 3:
 				configObject.CDRepoManual(cliArguments[2])
 			default:
-				fmt.Println("[Exit 1] Please select valid sub-action")
+				generalHelpers.ShowHelp(2, "cd")
 				os.Exit(1)
 			}
 			configObject.CloseFiles()
 		default:
-			fmt.Println("[Exit 1] Please select valid action")
+			generalHelpers.ShowHelp(1, "")
 			os.Exit(1)
 		}
 
 	} else {
-		// Can print help here
-		fmt.Println("Please select an action")
+		generalHelpers.ShowHelp(1, "")
 		os.Exit(1)
 	}
 }
