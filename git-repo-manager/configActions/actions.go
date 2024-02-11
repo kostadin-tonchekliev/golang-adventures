@@ -98,7 +98,7 @@ func SetupEnv() {
 		os.Exit(1)
 	}
 
-	_, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() {%s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi}\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
+	_, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() { %s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi }\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
 	if err != nil {
 		fmt.Println("[Err] Unable to write to file\n", err)
 	}
@@ -316,8 +316,13 @@ func (config Config) RemoveConfig() {
 		err                          error
 	)
 
-	for petName = range config.RepoMap {
-		choiceOptions = append(choiceOptions, petName)
+	if len(config.RepoMap) > 0 {
+		for petName = range config.RepoMap {
+			choiceOptions = append(choiceOptions, petName)
+		}
+	} else {
+		fmt.Println("[Warn] Config file empty")
+		os.Exit(0)
 	}
 
 	repoSelection, err = promptObject.Ask("Select repositories to remove").MultiChoose(choiceOptions, multichoose.WithHelp(true))
@@ -349,13 +354,18 @@ func (config Config) CDRepoChoice() {
 		err                    error
 	)
 
-	for petName, repoContent = range config.RepoMap {
-		repoObject = choose.Choice{
-			Text: petName,
-			Note: repoContent.Url,
-		}
+	if len(config.RepoMap) > 0 {
+		for petName, repoContent = range config.RepoMap {
+			repoObject = choose.Choice{
+				Text: petName,
+				Note: repoContent.Url,
+			}
 
-		choiceOptions = append(choiceOptions, repoObject)
+			choiceOptions = append(choiceOptions, repoObject)
+		}
+	} else {
+		fmt.Println("[Warn] Config file empty")
+		os.Exit(1)
 	}
 
 	repoSelection, err = promptObject.Ask("Select repository").AdvancedChoose(choiceOptions)
