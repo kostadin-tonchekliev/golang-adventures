@@ -397,5 +397,4 @@ func (config Config) CDRepoManual(repoSelection string) {
 		fmt.Printf("[Err] Repository %s not found in the config\n", repoSelection)
 		os.Exit(1)
 	}
-
 }

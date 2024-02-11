@@ -75,6 +75,11 @@ func ShowHelp(level int, origin string) {
 			Level:       1,
 			Origin:      "",
 		},
+		"version": {
+			Description: "Display build version of the executable",
+			Level:       1,
+			Origin:      "",
+		},
 		"config": {
 			Description: "Actions related to the config file",
 			Level:       1,
@@ -118,4 +123,10 @@ func ShowHelp(level int, origin string) {
 			fmt.Printf("\t %s - %s\n", argument, content.Description)
 		}
 	}
+}
+
+// DisplayVersion - Show the version of the executable
+func DisplayVersion() {
+	fmt.Printf("Build version: %s - %s\n", sharedConstants.BuildVersion, sharedConstants.BuildType)
+	fmt.Printf("Build date: %s\n", sharedConstants.BuildDate)
 }

@@ -16,6 +16,9 @@ func main() {
 			generalHelpers.VerifyEnv()
 			configObject := configActions.ReadConfig()
 			configObject.RepoStatus()
+			configObject.CloseFiles()
+		case "version":
+			generalHelpers.DisplayVersion()
 		case "config":
 			generalHelpers.VerifyEnv()
 			configObject := configActions.ReadConfig()
@@ -53,7 +56,6 @@ func main() {
 			generalHelpers.ShowHelp(1, "")
 			os.Exit(1)
 		}
-
 	} else {
 		generalHelpers.ShowHelp(1, "")
 		os.Exit(1)

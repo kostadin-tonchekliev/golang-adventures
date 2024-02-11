@@ -21,6 +21,7 @@ Once the config is build you can run any of the actions (see supported actions b
 ## Supported Actions:
 * `setup` - Configure project environment. This needs to be run only on the first run.
 * `status` - Show the status of the repositories. Prints repository petname, current local branch and types/numbers of staged files.
+* `version` - Display build information
 * `config` - Actions for modifying the config
   * `ls` - List existing config
   * `add`- Add new options to the config
