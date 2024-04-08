@@ -51,7 +51,7 @@ func VerifyEnv() {
 	}
 
 	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName)); err != nil {
-		fmt.Printf("[Err] Project folder %s/%s cannot be found or isn't accessible. Has `setup` been ran?\n%s\n", homeDir, sharedConstants.ProjectHomeName, err)
+		fmt.Printf("[Err] Project folder %s/%s cannot be found or isn't accessible. Has `setup` been ran?\n", homeDir, sharedConstants.ProjectHomeName)
 		os.Exit(1)
 	}
 }

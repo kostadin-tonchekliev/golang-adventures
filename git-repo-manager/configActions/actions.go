@@ -11,7 +11,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"io/fs"
 	"os"
+	"slices"
 )
 
 // Objects used through the script
@@ -36,15 +38,27 @@ type RepoObject struct {
 // SetupEnv - Build and verify project environment
 func SetupEnv() {
 	var (
-		homeDir, fileName, execLocation, shellType, shellFileLocation string
-		fileObject                                                    *os.File
-		err                                                           error
+		execLocation, homeDir, fileName, configChoice, configLocation, functionContent string
+		homeContent                                                                    []os.DirEntry
+		singleFile                                                                     fs.DirEntry
+		fileObject                                                                     *os.File
+		supportedConfigFiles, existingConfigFiles                                      []string
+		err                                                                            error
 	)
+
+	// Define supported config files
+	supportedConfigFiles = []string{".bashrc", ".bash_alias", ".bash_functions", ".zshrc", ".zsh_alias", ".zsh_functions"}
 
 	homeDir, err = os.UserHomeDir()
 	if err != nil {
 		fmt.Println("[Err] Unable to read home directory\n", err)
 		os.Exit(1)
+	}
+
+	execLocation, err = os.Executable()
+	if err != nil {
+		fmt.Println("[Err] Unable to find path of executable, please enter it manually")
+		execLocation = generalHelpers.ReadInput("Select path of executable:", promptObject, true)
 	}
 
 	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName)); err != nil {
@@ -79,31 +93,53 @@ func SetupEnv() {
 		}
 	}
 
-	execLocation = generalHelpers.ReadInput("Select path of executable:", promptObject, true)
-	shellType = os.Getenv("SHELL")
+	homeContent, err = os.ReadDir(homeDir)
+	if err != nil {
+		fmt.Printf("Unable to read the content of %s\n%s\n", homeDir, err)
+		os.Exit(0)
+	}
 
-	switch shellType {
-	case "/bin/zsh":
-		shellFileLocation = fmt.Sprintf("%s/.zshrc", homeDir)
-	case "/bin/bash":
-		shellFileLocation = fmt.Sprintf("%s/.bashrc", homeDir)
+	for _, singleFile = range homeContent {
+		if !singleFile.IsDir() {
+			if slices.Contains(supportedConfigFiles, singleFile.Name()) {
+				existingConfigFiles = append(existingConfigFiles, singleFile.Name())
+			}
+		}
+	}
+
+	// Define custom options
+	existingConfigFiles = append(existingConfigFiles, "Custom", "Skip")
+
+	configChoice, err = promptObject.Ask("Select config file for cd function:").Choose(existingConfigFiles)
+	if err != nil {
+		fmt.Println("[Err] Unable to select choice\n", err)
+	}
+
+	functionContent = fmt.Sprintf("\nfunction %s() { %s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi }\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName)
+
+	switch configChoice {
+	case "Custom":
+		configLocation = generalHelpers.ReadInput("Select your desired config", promptObject, true)
+	case "Skip":
+		fmt.Println("Append the following function to your desired file, this will allow you to cd directly into repositories:\n", functionContent)
+		os.Exit(1)
 	default:
-		fmt.Println("[Err] Unknown shell type:", shellType)
-		os.Exit(1)
+		configLocation = configChoice
 	}
 
-	fileObject, err = os.OpenFile(shellFileLocation, os.O_WRONLY|os.O_APPEND, 0644)
+	fileObject, err = os.OpenFile(fmt.Sprintf("%s/%s", homeDir, configLocation), os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Println("[Err] Unable to open file\n", err)
-		os.Exit(1)
+		fmt.Println("[Err] Unable to open config file for writing:\n", err)
 	}
 
-	_, err = fileObject.WriteString(fmt.Sprintf("\nfunction %s() { %s cd $1; if [[ $? == 0 ]]; then cd $(cat %s/%s/%s); fi }\n", sharedConstants.AliasName, execLocation, homeDir, sharedConstants.ProjectHomeName, sharedConstants.TmpDirFileName))
+	defer fileObject.Close()
+	_, err = fileObject.WriteString(functionContent)
 	if err != nil {
-		fmt.Println("[Err] Unable to write to file\n", err)
+		fmt.Println("[Err] Unable to write function to config:\n", err)
 	}
 
-	fmt.Printf("[Info] Please run `source %s` or reload your terminal\n", shellFileLocation)
+	fmt.Println("[Info] Write successfull!")
+	fmt.Printf("[Info] Please run `source %s` or reload your terminal\n", configLocation)
 }
 
 // ReadConfig - Read the config file and build it into the Config struct
