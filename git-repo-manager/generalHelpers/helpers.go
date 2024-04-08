@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"git-repo-manager/sharedConstants"
 	"github.com/cqroot/prompt"
+	"github.com/go-git/go-git/v5"
+	config2 "github.com/go-git/go-git/v5/config"
 	"os"
 )
 
@@ -129,4 +131,38 @@ func ShowHelp(level int, origin string) {
 func DisplayVersion() {
 	fmt.Printf("Build version: %s - %s\n", sharedConstants.BuildVersion, sharedConstants.BuildType)
 	fmt.Printf("Build date: %s\n", sharedConstants.BuildDate)
+}
+
+// GetRepoUri - Get the uri of the remote repository
+func GetRepoUri(repoPath string) string {
+	var (
+		repoObject     *git.Repository
+		repoConfig     *config2.Config
+		configMapValue *config2.RemoteConfig
+		repoUri        string
+		err            error
+	)
+	repoUri = "something" //Just to stop erroring
+
+	fmt.Println(repoPath)
+
+	repoObject, err = git.PlainOpen(repoPath)
+	if err != nil {
+		fmt.Printf("[Err] Unable to initialize repository in %s\n%s\n", repoPath, err)
+	}
+
+	repoConfig, err = repoObject.Config()
+	if err != nil {
+		fmt.Printf("[Err] Unable to detect config of repository %s\n%s\n", repoPath, err)
+	}
+
+	for _, configMapValue = range repoConfig.Remotes {
+		if configMapValue.Name == "origin" {
+			repoUri = configMapValue.URLs[0]
+		} else {
+			repoUri = "Empty"
+		}
+	}
+
+	return repoUri
 }

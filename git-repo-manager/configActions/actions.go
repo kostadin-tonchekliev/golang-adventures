@@ -30,9 +30,8 @@ type Config struct {
 }
 
 type RepoObject struct {
-	Url         string `json:"url"`
-	Path        string `json:"path"`
-	Description string `json:"description"`
+	Url  string `json:"url"`
+	Path string `json:"path"`
 }
 
 // SetupEnv - Build and verify project environment
@@ -303,7 +302,7 @@ func (config Config) ListConfig() {
 
 	if len(config.RepoMap) != 0 {
 		for petName, repoContent = range config.RepoMap {
-			fmt.Printf("[%s] in %s: %s - %s\n", blue(petName), yellow(repoContent.Path), repoContent.Description, cyan(repoContent.Url))
+			fmt.Printf("[%s] in %s: %s\n", blue(petName), yellow(repoContent.Path), cyan(repoContent.Url))
 		}
 	} else {
 		fmt.Println("[Warn] Config file empty")
@@ -314,20 +313,18 @@ func (config Config) ListConfig() {
 // AddConfig - Add additional entries to the config file
 func (config Config) AddConfig() {
 	var (
-		petName, uri, path, description string
-		jsonContent                     []byte
-		err                             error
+		petName, uri, path string
+		jsonContent        []byte
+		err                error
 	)
 
 	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject, false)
-	description = generalHelpers.ReadInput("Select description for the repository", promptObject, false)
-	uri = generalHelpers.ReadInput("Select uri of the repository", promptObject, false)
 	path = generalHelpers.ReadInput("Select local path of the repository", promptObject, true)
+	uri = generalHelpers.GetRepoUri(path)
 
 	config.RepoMap[petName] = RepoObject{
-		Url:         uri,
-		Path:        path,
-		Description: description,
+		Url:  uri,
+		Path: path,
 	}
 
 	jsonContent, err = json.MarshalIndent(config.RepoMap, "", "  ")
