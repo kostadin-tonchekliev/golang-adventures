@@ -27,7 +27,9 @@ func main() {
 				case "ls":
 					configObject.ListConfig()
 				case "add":
-					configObject.AddConfig()
+					configObject.AddSingleConfig()
+				case "bulk-add":
+					configObject.AddMultipleConfig()
 				case "remove":
 					configObject.RemoveConfig()
 				default:

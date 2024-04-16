@@ -93,7 +93,12 @@ func ShowHelp(level int, origin string) {
 			Origin:      "config",
 		},
 		"add": {
-			Description: "Add new repositories to config",
+			Description: "Add a single repository to the config",
+			Level:       2,
+			Origin:      "config",
+		},
+		"bulk-add": {
+			Description: "Bulk add repositories to the config",
 			Level:       2,
 			Origin:      "config",
 		},
@@ -142,9 +147,6 @@ func GetRepoUri(repoPath string) string {
 		repoUri        string
 		err            error
 	)
-	repoUri = "something" //Just to stop erroring
-
-	fmt.Println(repoPath)
 
 	repoObject, err = git.PlainOpen(repoPath)
 	if err != nil {

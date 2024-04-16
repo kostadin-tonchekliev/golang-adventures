@@ -277,7 +277,7 @@ func (config Config) RepoStatus() {
 			}
 
 			fmt.Printf("[%s] in ", blue(petName))
-			if branchName.Name() == "refs/heads/main" {
+			if branchName.Name() == "refs/heads/main" || branchName.Name() == "refs/heads/master" {
 				fmt.Printf("%s:\n", yellow(branchName.Name()))
 			} else {
 				fmt.Printf("%s:\n", green(branchName.Name()))
@@ -310,16 +310,63 @@ func (config Config) ListConfig() {
 	}
 }
 
-// AddConfig - Add additional entries to the config file
-func (config Config) AddConfig() {
+// AddSingleConfig - Add additional entries to the config file
+func (config Config) AddSingleConfig() {
 	var (
-		petName, uri, path string
-		jsonContent        []byte
-		err                error
+		petName, path string
+	)
+	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject, false)
+	path = generalHelpers.ReadInput("Select absolute path of the repository", promptObject, true)
+
+	config.AddConfig(petName, path)
+}
+
+// AddMultipleConfig - Add automatically multiple repositories by specifying a single main directory
+func (config Config) AddMultipleConfig() {
+	var (
+		repoPath, singleRepoPath string
+		repoObject               *git.Repository
+		dirContent               []os.DirEntry
+		dirEntry                 os.DirEntry
+		err                      error
 	)
 
-	petName = generalHelpers.ReadInput("Select petname for the repository", promptObject, false)
-	path = generalHelpers.ReadInput("Select local path of the repository", promptObject, true)
+	repoPath = generalHelpers.ReadInput("Select the absolute path where all repositories are stored", promptObject, true)
+
+	dirContent, err = os.ReadDir(repoPath)
+	if err != nil {
+		fmt.Printf("[Err] Unable to read the content of %s\n%s\n", repoPath, err)
+		os.Exit(1)
+	}
+
+	for _, dirEntry = range dirContent {
+		if dirEntry.IsDir() {
+			singleRepoPath = fmt.Sprintf("%s/%s", repoPath, dirEntry.Name())
+			fmt.Printf("[Info] Found subdirectory: %s. Verifying if it contains a valid repository\n", dirEntry.Name())
+			repoObject, err = git.PlainOpen(singleRepoPath)
+			if err != nil {
+				fmt.Printf("[Warn] %s doesn't appear to contain a valid repository\n", dirEntry.Name())
+			} else {
+				// Just a quick command to verify if it is working
+				_, err = repoObject.Head()
+				if err != nil {
+					fmt.Printf("[Warn] The subdirectory %s appears to contain a repository but coun't get HEAD\n%s\n", dirEntry.Name(), err)
+				}
+				config.AddConfig(dirEntry.Name(), singleRepoPath)
+				fmt.Printf("[Info] Successfully added %s to the config\n", dirEntry.Name())
+			}
+		}
+	}
+}
+
+// AddConfig - Add config into the config file
+func (config Config) AddConfig(petName string, path string) {
+	var (
+		jsonContent []byte
+		uri         string
+		err         error
+	)
+
 	uri = generalHelpers.GetRepoUri(path)
 
 	config.RepoMap[petName] = RepoObject{
