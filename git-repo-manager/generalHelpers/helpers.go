@@ -4,10 +4,17 @@ import (
 	"fmt"
 	"git-repo-manager/sharedConstants"
 	"github.com/cqroot/prompt"
+	"github.com/fatih/color"
 	"github.com/go-git/go-git/v5"
 	config2 "github.com/go-git/go-git/v5/config"
 	"os"
 )
+
+var Yellow = color.New(color.FgYellow).SprintFunc()
+var Blue = color.New(color.FgBlue).SprintFunc()
+var Cyan = color.New(color.FgCyan).SprintFunc()
+var Green = color.New(color.FgGreen).SprintFunc()
+var Red = color.New(color.FgRed).SprintFunc()
 
 // ReadInput - Read user input
 func ReadInput(message string, prompt *prompt.Prompt, isFile bool) string {
@@ -19,15 +26,14 @@ func ReadInput(message string, prompt *prompt.Prompt, isFile bool) string {
 	for {
 		inputString, err = prompt.Ask(message).Input("")
 		if err != nil {
-			fmt.Println("[Err] Unable to read input\n", err)
-			os.Exit(1)
+			LogOutput(fmt.Sprintf("Unable to read input\n%s\n", err), 4, true)
 		}
 
 		if inputString != "" {
 			if isFile {
 				_, err = os.Stat(inputString)
 				if err != nil {
-					fmt.Println("[Err] File/folder doesn't appear to exist")
+					LogOutput("File/folder doesn't appear to exist", 4, false)
 				} else {
 					break
 				}
@@ -36,6 +42,7 @@ func ReadInput(message string, prompt *prompt.Prompt, isFile bool) string {
 			}
 		}
 	}
+
 	return inputString
 }
 
@@ -48,13 +55,11 @@ func VerifyEnv() {
 
 	homeDir, err = os.UserHomeDir()
 	if err != nil {
-		fmt.Println("[Err] Unable to read home directory\n", err)
-		os.Exit(1)
+		LogOutput(fmt.Sprintf("Unable to read home directory\n%s\n", err), 4, true)
 	}
 
 	if _, err = os.Stat(fmt.Sprintf("%s/%s", homeDir, sharedConstants.ProjectHomeName)); err != nil {
-		fmt.Printf("[Err] Project folder %s/%s cannot be found or isn't accessible. Has `setup` been ran?\n", homeDir, sharedConstants.ProjectHomeName)
-		os.Exit(1)
+		LogOutput(fmt.Sprintf("Project folder %s/%s cannot be found or isn't accessible. Has `setup` been ran?\n", homeDir, sharedConstants.ProjectHomeName), 4, true)
 	}
 }
 
@@ -150,12 +155,12 @@ func GetRepoUri(repoPath string) string {
 
 	repoObject, err = git.PlainOpen(repoPath)
 	if err != nil {
-		fmt.Printf("[Err] Unable to initialize repository in %s\n%s\n", repoPath, err)
+		LogOutput(fmt.Sprintf("[Err] Unable to initialize repository in %s\n%s\n", repoPath, err), 4, true)
 	}
 
 	repoConfig, err = repoObject.Config()
 	if err != nil {
-		fmt.Printf("[Err] Unable to detect config of repository %s\n%s\n", repoPath, err)
+		LogOutput(fmt.Sprintf("[Err] Unable to detect config of repository %s\n%s\n", repoPath, err), 4, true)
 	}
 
 	for _, configMapValue = range repoConfig.Remotes {
@@ -167,4 +172,32 @@ func GetRepoUri(repoPath string) string {
 	}
 
 	return repoUri
+}
+
+// LogOutput - Display output
+func LogOutput(outputText string, level int, exit bool) {
+	// The existing levels are:
+	// 1 - Debug
+	// 2 - Info
+	// 3 - Warning
+	// 4 - Error
+	switch level {
+	case 1:
+		fmt.Printf("[%s] %s\n", Blue("Debug"), outputText)
+	case 2:
+		fmt.Printf("[%s] %s\n", Cyan("Info"), outputText)
+	case 3:
+		fmt.Printf("[%s] %s\n", Yellow("Warn"), outputText)
+	case 4:
+		fmt.Printf("[%s] %s\n", Red("Err"), outputText)
+
+	}
+
+	if exit {
+		if level == 4 {
+			os.Exit(1)
+		} else {
+			os.Exit(0)
+		}
+	}
 }

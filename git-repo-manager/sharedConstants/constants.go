@@ -1,9 +1,9 @@
 package sharedConstants
 
 // Build information constants
-const BuildVersion = "0.1"
-const BuildDate = "11-02-2024"
-const BuildType = "alfa"
+const BuildVersion = "1.0"
+const BuildDate = "19-04-2024"
+const BuildType = "stable"
 
 // Project files constants
 const ConfigFileName = "grconfig.json"
