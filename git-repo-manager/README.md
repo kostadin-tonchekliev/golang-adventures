@@ -1,6 +1,6 @@
 Golang Repository Manager
 ---
-version 0.1<br>
+version 1.0<br>
 
 ## Installation:
 ### 1. Pre-built
