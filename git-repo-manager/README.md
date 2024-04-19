@@ -24,6 +24,7 @@ Once the config is build you can run any of the actions (see supported actions b
 * `version` - Display build information
 * `config` - Actions for modifying the config
   * `ls` - List existing config
-  * `add`- Add new options to the config
+  * `add`- Add a single repository to the config
+  * `bulk-add` - Bulk add multiple repositories to the config
   * `remove` - Remove options from the config
 * `cd` - Move to repositories. **This isn't to be run on its own!**
