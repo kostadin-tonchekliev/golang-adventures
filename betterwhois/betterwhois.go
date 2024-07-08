@@ -8,9 +8,10 @@ import (
 
 func main() {
 	var (
-		sysArguments []string
-		rawWhois     string
-		domain       actions.Domain
+		sysArguments        []string
+		rawWhois, inputType string
+		ip                  actions.Ip
+		domain              actions.Domain
 	)
 
 	sysArguments = os.Args
@@ -20,8 +21,16 @@ func main() {
 		os.Exit(1)
 	case len(sysArguments) == 2:
 		rawWhois = actions.GetWhois(sysArguments[1])
-		domain = actions.ParseData(rawWhois)
-		domain.Print()
+		inputType = actions.GetType(sysArguments[1])
+		switch inputType {
+		case "ip":
+			ip = actions.ParseIpData(rawWhois)
+			ip.Print()
+		case "domain":
+			domain = actions.ParseDomainData(rawWhois)
+			domain.Print()
+		}
+
 		os.Exit(0)
 	case len(sysArguments) >= 3:
 		fmt.Println("[Err] Too many arguments provided")
