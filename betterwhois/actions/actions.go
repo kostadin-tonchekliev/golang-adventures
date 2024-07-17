@@ -1,8 +1,8 @@
 package actions
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/likexian/whois"
 	"os"
 	"slices"
@@ -10,10 +10,17 @@ import (
 	"unicode"
 )
 
+var (
+	Yellow = color.New(color.FgYellow).SprintFunc()
+	Cyan   = color.New(color.FgCyan).SprintFunc()
+	Green  = color.New(color.FgGreen).SprintFunc()
+	Red    = color.New(color.FgRed).SprintFunc()
+)
+
 type Domain struct {
-	Name       string
-	Expiry     string
-	Created    string
+	Name       string `default:"Redacted for privacy"`
+	Expiry     string `default:"Redacted for privacy"`
+	Created    string `default:"Redacted for privacy"`
 	Registrar  Registrar
 	Registrant Registrant
 	DNS        DNS
@@ -21,36 +28,37 @@ type Domain struct {
 
 type DNS struct {
 	NameServers []string
-	DNSSEC      string
+	DNSSEC      string `default:"Redacted for privacy"`
 }
 
 type Registrar struct {
-	Name  string
-	Email string
-	Phone string
-	URL   string
-	Whois string
+	Name  string `default:"Redacted for privacy"`
+	Email string `default:"Redacted for privacy"`
+	Phone string `default:"Redacted for privacy"`
+	URL   string `default:"Redacted for privacy"`
+	Whois string `default:"Redacted for privacy"`
 }
 
 type Registrant struct {
-	Organization string
-	Country      string
-	State        string
+	Organization string `default:"Redacted for privacy"`
+	Country      string `default:"Redacted for privacy"`
+	State        string `default:"Redacted for privacy"`
 }
 
 type Ip struct {
+	Value        string
 	NetInfo      NetInfo
-	Organization string
-	Country      string
-	State        string
-	City         string
-	Address      string
-	PostalCode   string
+	Organization string `default:"Redacted for privacy"`
+	Country      string `default:"Redacted for privacy"`
+	State        string `default:"Redacted for privacy"`
+	City         string `default:"Redacted for privacy"`
+	Address      string `default:"Redacted for privacy"`
+	PostalCode   string `default:"Redacted for privacy"`
 }
 
 type NetInfo struct {
-	Netrange string
-	Netname  string
+	Netrange string `default:"Redacted for privacy"`
+	Netname  string `default:"Redacted for privacy"`
 }
 
 func GetType(userInput string) string {
@@ -104,10 +112,14 @@ func GetWhois(userInput string) string {
 		os.Exit(1)
 	}
 
+	if strings.Contains(rawWhoIs, "No match for") {
+		fmt.Printf("[Err] Unable to get whois data for %s\n", userInput)
+		os.Exit(1)
+	}
 	return rawWhoIs
 }
 
-func ParseIpData(rawWhoIs string) Ip {
+func ParseIpData(rawWhoIs string, inputIp string) Ip {
 	var (
 		ipStruct                                                                         Ip
 		sliceCounter                                                                     int
@@ -158,6 +170,7 @@ func ParseIpData(rawWhoIs string) Ip {
 	}
 
 	ipStruct = Ip{
+		Value: inputIp,
 		NetInfo: NetInfo{
 			Netrange: NetRange,
 			Netname:  NetName,
@@ -204,7 +217,7 @@ func ParseDomainData(rawWhoIs string) Domain {
 
 		switch lineContent[0] {
 		case "Domain Name":
-			DomainName = lineContent[1]
+			DomainName = strings.ToLower(lineContent[1])
 		case "Registry Expiry Date":
 			DomainExpired = lineContent[1]
 		case "Creation Date":
@@ -263,11 +276,58 @@ func ParseDomainData(rawWhoIs string) Domain {
 }
 
 func (ip Ip) Print() {
-	jsonOutput, _ := json.Marshal(ip)
-	fmt.Println(string(jsonOutput))
+	fmt.Printf("%s: %s\n\n", colorPrint("Checking IP", "title"), colorPrint(ip.Value, "header"))
+	fmt.Printf("%s: %s\n", colorPrint("Organization", "title"), colorPrint(ip.Organization, "content"))
+	fmt.Printf("%s: %s\n", colorPrint("Country", "title"), colorPrint(ip.Country, "content"))
+	fmt.Printf("%s: %s\n", colorPrint("State", "title"), colorPrint(ip.State, "content"))
+	fmt.Printf("%s: %s\n", colorPrint("City", "title"), colorPrint(ip.City, "content"))
+	fmt.Printf("%s: %s\n", colorPrint("Address", "title"), colorPrint(ip.Address, "content"))
+	fmt.Printf("%s: %s\n", colorPrint("PostalCode", "title"), colorPrint(ip.PostalCode, "content"))
+	fmt.Printf("%s:\n", colorPrint("Netinfo", "title"))
+	fmt.Printf("  %s: %s\n", colorPrint("Netrange", "title"), colorPrint(ip.NetInfo.Netrange, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("Netname", "title"), colorPrint(ip.NetInfo.Netname, "content"))
+
 }
 
 func (domain Domain) Print() {
-	jsonOutput, _ := json.Marshal(domain)
-	fmt.Println(string(jsonOutput))
+	fmt.Printf("%s: %s\n\n", colorPrint("Checking Domain", "title"), colorPrint(domain.Name, "header"))
+	fmt.Printf("%s: %s\n", colorPrint("Creation date", "title"), colorPrint(domain.Created, "content"))
+	fmt.Printf("%s: %s\n", colorPrint("Expiration date", "title"), colorPrint(domain.Expiry, "content"))
+	fmt.Printf("%s:\n", colorPrint("DNS info", "title"))
+	fmt.Printf("  %s:\n", colorPrint("NameServers", "title"))
+	for _, arrayElement := range domain.DNS.NameServers {
+		fmt.Printf("    - %s\n", colorPrint(arrayElement, "content"))
+	}
+	fmt.Printf("  %s: %s\n", colorPrint("DNSSEC", "title"), colorPrint(domain.DNS.DNSSEC, "content"))
+	fmt.Printf("%s:\n", colorPrint("Registrant info", "title"))
+	fmt.Printf("  %s: %s\n", colorPrint("Organization", "title"), colorPrint(domain.Registrant.Organization, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("Country", "title"), colorPrint(domain.Registrant.Country, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("State", "title"), colorPrint(domain.Registrant.State, "content"))
+	fmt.Printf("%s:\n", colorPrint("Registrar info", "title"))
+	fmt.Printf("  %s: %s\n", colorPrint("Name", "title"), colorPrint(domain.Registrar.Name, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("Email", "title"), colorPrint(domain.Registrar.Email, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("Phone", "title"), colorPrint(domain.Registrar.Phone, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("Url", "title"), colorPrint(domain.Registrar.URL, "content"))
+	fmt.Printf("  %s: %s\n", colorPrint("WhoIs", "title"), colorPrint(domain.Registrar.Whois, "content"))
+
+}
+
+func colorPrint(inputText string, textType string) string {
+	if inputText == "Redacted for privacy" {
+		return Red(inputText)
+	}
+
+	switch textType {
+	case "header":
+		return Yellow(inputText)
+	case "title":
+		return Cyan(inputText)
+	case "content":
+		return Green(inputText)
+	default:
+		fmt.Printf("Unknown textType: %s\n", textType)
+		os.Exit(1)
+	}
+
+	return "empty"
 }
