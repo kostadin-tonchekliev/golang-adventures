@@ -1,4 +1,4 @@
-module betterwhois
+module prettywhois
 
 go 1.22.2
 

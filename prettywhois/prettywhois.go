@@ -1,7 +1,7 @@
 package main
 
 import (
-	"betterwhois/actions"
+	"prettywhois/actions"
 	"fmt"
 	"os"
 )
