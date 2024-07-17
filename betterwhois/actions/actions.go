@@ -10,6 +10,7 @@ import (
 	"unicode"
 )
 
+// Define colors for output
 var (
 	Yellow = color.New(color.FgYellow).SprintFunc()
 	Cyan   = color.New(color.FgCyan).SprintFunc()
@@ -17,6 +18,7 @@ var (
 	Red    = color.New(color.FgRed).SprintFunc()
 )
 
+// Domain - Any domain related information and substructs
 type Domain struct {
 	Name       string `default:"Redacted for privacy"`
 	Expiry     string `default:"Redacted for privacy"`
@@ -45,6 +47,7 @@ type Registrant struct {
 	State        string `default:"Redacted for privacy"`
 }
 
+// Ip - Ip domain related information and substructs
 type Ip struct {
 	Value        string
 	NetInfo      NetInfo
@@ -61,6 +64,7 @@ type NetInfo struct {
 	Netname  string `default:"Redacted for privacy"`
 }
 
+// GetType - Get the type of the input string, either domain or IP
 func GetType(userInput string) string {
 	var (
 		inputType                    string
@@ -100,6 +104,7 @@ func GetType(userInput string) string {
 	return inputType
 }
 
+// GetWhois - Get raw whois data
 func GetWhois(userInput string) string {
 	var (
 		rawWhoIs string
@@ -119,6 +124,7 @@ func GetWhois(userInput string) string {
 	return rawWhoIs
 }
 
+// ParseIpData - Parse the raw data into an Ip struct
 func ParseIpData(rawWhoIs string, inputIp string) Ip {
 	var (
 		ipStruct                                                                         Ip
@@ -130,23 +136,19 @@ func ParseIpData(rawWhoIs string, inputIp string) Ip {
 	for _, line = range strings.Split(rawWhoIs, "\n") {
 		lineContent = strings.Split(line, ":")
 
-		// Trim whitespace from results
-		if len(lineContent) == 2 {
-			lineContent[1] = strings.Trim(lineContent[1], " ")
-		}
-
 		// Skip matches that don't have the needed number of fields
 		if len(lineContent) <= 1 {
 			continue
 		}
 
+		// Trim white space
+		for sliceCounter = range lineContent {
+			lineContent[sliceCounter] = strings.TrimSpace(lineContent[sliceCounter])
+		}
+
 		// Skip redacted lines
 		if lineContent[1] == "REDACTED FOR PRIVACY" {
 			continue
-		}
-
-		for sliceCounter = range lineContent {
-			lineContent[sliceCounter] = strings.TrimSpace(lineContent[sliceCounter])
 		}
 
 		switch lineContent[0] {
@@ -186,6 +188,7 @@ func ParseIpData(rawWhoIs string, inputIp string) Ip {
 	return ipStruct
 }
 
+// ParseDomainData - Parse the raw data into a Domain struct
 func ParseDomainData(rawWhoIs string) Domain {
 	var (
 		domainStruct                                                                Domain
@@ -200,14 +203,14 @@ func ParseDomainData(rawWhoIs string) Domain {
 	for _, line = range strings.Split(rawWhoIs, "\n") {
 		lineContent = strings.Split(line, ":")
 
-		// Trim whitespace from results
-		for sliceCounter = range lineContent {
-			lineContent[sliceCounter] = strings.TrimSpace(lineContent[sliceCounter])
-		}
-
 		// Skip matches that don't have the needed number of fields
 		if len(lineContent) <= 1 {
 			continue
+		}
+
+		// Trim whitespace from results
+		for sliceCounter = range lineContent {
+			lineContent[sliceCounter] = strings.TrimSpace(lineContent[sliceCounter])
 		}
 
 		// Skip redacted lines
@@ -275,6 +278,7 @@ func ParseDomainData(rawWhoIs string) Domain {
 	return domainStruct
 }
 
+// Print - Print IP data
 func (ip Ip) Print() {
 	fmt.Printf("%s: %s\n\n", colorPrint("Checking IP", "title"), colorPrint(ip.Value, "header"))
 	fmt.Printf("%s: %s\n", colorPrint("Organization", "title"), colorPrint(ip.Organization, "content"))
@@ -289,6 +293,7 @@ func (ip Ip) Print() {
 
 }
 
+// Print - Print Domain data
 func (domain Domain) Print() {
 	fmt.Printf("%s: %s\n\n", colorPrint("Checking Domain", "title"), colorPrint(domain.Name, "header"))
 	fmt.Printf("%s: %s\n", colorPrint("Creation date", "title"), colorPrint(domain.Created, "content"))
@@ -312,6 +317,7 @@ func (domain Domain) Print() {
 
 }
 
+// colorPrint - Color print input data based on the type of data
 func colorPrint(inputText string, textType string) string {
 	if inputText == "Redacted for privacy" {
 		return Red(inputText)
