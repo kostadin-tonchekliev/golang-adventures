@@ -1,7 +1,7 @@
 package main
 
 import (
-	"betterwhois/actions"
+	"prettywhois/actions"
 	"fmt"
 	"os"
 )
@@ -24,7 +24,7 @@ func main() {
 		inputType = actions.GetType(sysArguments[1])
 		switch inputType {
 		case "ip":
-			ip = actions.ParseIpData(rawWhois)
+			ip = actions.ParseIpData(rawWhois, sysArguments[1])
 			ip.Print()
 		case "domain":
 			domain = actions.ParseDomainData(rawWhois)
